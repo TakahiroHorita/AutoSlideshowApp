@@ -43,6 +43,6 @@
             android:id="@+id/playstop_button"
             android:layout_width="100dp"
             android:layout_height="wrap_content"
-            android:text="再生/停止" />
+            android:text="再生" />
     </LinearLayout>
 </RelativeLayout>

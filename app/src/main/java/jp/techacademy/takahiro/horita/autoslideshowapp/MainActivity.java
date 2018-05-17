@@ -8,6 +8,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -16,10 +17,17 @@ import android.widget.Button;
 import android.widget.ImageView;
 
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final int PERMISSIONS_REQUEST_CODE = 100;
+
+    Timer mTimer;
+    Handler mHandler = new Handler();
+    int buttonCheck = 0; //ボタンの表示切り替え用
+
     ArrayList<Uri> arrayList = new ArrayList<>();
     int i = 0;
 
@@ -43,42 +51,97 @@ public class MainActivity extends AppCompatActivity {
             getContentsInfo();
         }
 
-        Button forward_button = findViewById(R.id.forward_button);
+        final Button forward_button = findViewById(R.id.forward_button);
         forward_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                ImageView imageView = findViewById(R.id.imageView);
-                if(arrayList.size()-1 > i){
-                    i++;
-                    imageView.setImageURI(arrayList.get(i));
-                }else{
-                    i = 0;
-                    imageView.setImageURI(arrayList.get(i));
+                //パーミッションチェック
+                if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                    ImageView imageView = findViewById(R.id.imageView);
+                    if(arrayList.size()-1 > i){
+                        //進むボタンで1つ先の画像を表示
+                        i++;
+                        imageView.setImageURI(arrayList.get(i));
+                    }else{
+                        //最後の画像の表示時に進むボタンをタップすると最初の画像を表示
+                        i = 0;
+                        imageView.setImageURI(arrayList.get(i));
+                    }
                 }
             }
         });
 
-        Button buck_button = findViewById(R.id.buck_button);
+        final Button buck_button = findViewById(R.id.buck_button);
         buck_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ImageView imageView = findViewById(R.id.imageView);
-                if(i > 0){
-                    i--;
-                    imageView.setImageURI(arrayList.get(i));
-                }else{
-                    i=arrayList.size()-1;
-                    imageView.setImageURI(arrayList.get(i));
+                //パーミッションチェック
+                if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                    ImageView imageView = findViewById(R.id.imageView);
+                    if (i > 0) {
+                        //戻るボタンで1つ前の画像を表示
+                        i--;
+                        imageView.setImageURI(arrayList.get(i));
+                    } else {
+                        //最初の画像の表示時に戻るボタンをタップすると最後の画像を表示
+                        i = arrayList.size() - 1;
+                        imageView.setImageURI(arrayList.get(i));
+                    }
                 }
             }
         });
 
-        Button playstop_button = findViewById(R.id.playstop_button);
+        final Button playstop_button = findViewById(R.id.playstop_button);
         playstop_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //パーミッションチェック
+                if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                    if (buttonCheck == 0) {
+                        //ボタンの表示を"再生"から"停止"に変更
+                        playstop_button.setText("停止");
+                        buttonCheck = 1;
 
+                        //自動送りの間は戻るボタンはタップ不可
+                        buck_button.setClickable(false);
+                        //自動送りの間は進むボタンはタップ不可
+                        forward_button.setClickable(false);
+
+                        // タイマーの作成
+                        mTimer = new Timer();
+                        // タイマーの始動
+                        mTimer.schedule(new TimerTask() {
+                            @Override
+                            public void run() {
+                                mHandler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        ImageView imageView = findViewById(R.id.imageView);
+                                        if (arrayList.size() - 1 > i) {
+                                            i++;
+                                            imageView.setImageURI(arrayList.get(i));
+                                        } else {
+                                            i = 0;
+                                            imageView.setImageURI(arrayList.get(i));
+                                        }
+                                    }
+                                });
+                            }
+                        }, 2000, 2000); // 最初に始動させるまで2000ミリ秒、ループの間隔を2000ミリ秒に設定
+                    } else {
+                        //ボタンの表示を"停止"から"再生"に変更
+                        playstop_button.setText("再生");
+                        //ボタンの表示確認用フラグ
+                        buttonCheck = 0;
+
+                        //戻るボタンをタップ可に変更
+                        buck_button.setClickable(true);
+                        //進むボタンをタップ可に変更
+                        forward_button.setClickable(true);
+                        //自動送り停止
+                        mTimer.cancel();
+                    }
+                }
             }
         });
     }
@@ -109,7 +172,6 @@ public class MainActivity extends AppCompatActivity {
         );
 
         if (cursor.moveToFirst()) {
-
             do {
                 // indexからIDを取得し、そのIDから画像のURIを取得する
                 int fieldIndex = cursor.getColumnIndex(MediaStore.Images.Media._ID);
@@ -120,9 +182,7 @@ public class MainActivity extends AppCompatActivity {
 
                 ImageView imageView = findViewById(R.id.imageView);
                 imageView.setImageURI(arrayList.get(0));
-
             } while (cursor.moveToNext());
-
         }
         cursor.close();
     }
