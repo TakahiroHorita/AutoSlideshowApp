@@ -103,9 +103,11 @@ public class MainActivity extends AppCompatActivity {
                         buttonCheck = 1;
 
                         //自動送りの間は戻るボタンはタップ不可
-                        buck_button.setClickable(false);
+                        //buck_button.setClickable(false);
+                        buck_button.setEnabled(false);
                         //自動送りの間は進むボタンはタップ不可
-                        forward_button.setClickable(false);
+                        //forward_button.setClickable(false);
+                        forward_button.setEnabled(false);
 
                         // タイマーの作成
                         mTimer = new Timer();
@@ -135,9 +137,13 @@ public class MainActivity extends AppCompatActivity {
                         buttonCheck = 0;
 
                         //戻るボタンをタップ可に変更
-                        buck_button.setClickable(true);
+                        //buck_button.setClickable(true);
+                        buck_button.setEnabled(true);
+
                         //進むボタンをタップ可に変更
-                        forward_button.setClickable(true);
+                        //forward_button.setClickable(true);
+                        forward_button.setEnabled(true);
+
                         //自動送り停止
                         mTimer.cancel();
                     }
